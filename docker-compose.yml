@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend
+    volumes:
+      - downloads:/app/downloads
+    ports:
+      - "8000:8000"
+    environment:
+      - DOWNLOAD_DIR=/app/downloads
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/pricecheck
+    depends_on:
+      - db
+
+  web:
+    build: ./web
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  worker:
+    build: ./backend
+    command: python scraper.py --serve-worker
+    volumes:
+      - downloads:/app/downloads
+    environment:
+      - DOWNLOAD_DIR=/app/downloads
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/pricecheck
+    depends_on:
+      - db
+
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=pricecheck
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  downloads:
+  postgres_data: 
